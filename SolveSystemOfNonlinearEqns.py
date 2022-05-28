@@ -22,6 +22,7 @@ f(x) returns the vector:
 
 """
 
+import matplotlib.ticker as mticker
 import numpy as np
 from math import exp, log
 from matplotlib import pyplot as plt
@@ -55,11 +56,18 @@ def visualizeLoss(lossFunction, min_x1, max_x1, min_x2, max_x2):
             Z[i, j] = lossFunction(np.array([[X[i, j], Y[i, j]]]).T)
 
     ax = plt.figure().gca(projection=Axes3D.name)
+    Z = np.log10(Z)
     ax.plot_surface(X, Y, Z, cmap='viridis')
     ax.set_title('Loss')
     ax.set_xlabel('x1')
     ax.set_ylabel('x2')
     ax.set_zlabel('loss')
+
+    # https://github.com/matplotlib/matplotlib/issues/209
+    def log_tick_formatter(val, pos=None):
+        return r"$10^{{{:.0f}}}$".format(val)
+
+    ax.zaxis.set_major_formatter(mticker.FuncFormatter(log_tick_formatter))
 
 
 def cos_sim(a, b):
@@ -69,7 +77,7 @@ def cos_sim(a, b):
     return dot_product / (norm_a * norm_b)
 
 
-def gradientDescent(lossFunction, xinit, maxIters=100, loss_threshold=1e-5, step_size=1e-2):
+def gradientDescent(lossFunction, initial_guess, max_iterations=100, loss_threshold=1e-5, step_size=1e-2):
     def gradient(x):
         h = 1e-12  # step size used to approximate the gradient of the loss function
         x1 = x.astype(np.float64)
@@ -80,7 +88,7 @@ def gradientDescent(lossFunction, xinit, maxIters=100, loss_threshold=1e-5, step
             grad[i] = (lossFunction(x2) - lossFunction(x1)) / h
         return grad
 
-    previous_x = xinit
+    previous_x = initial_guess
     previous_grad = gradient(previous_x)
     previous_loss = lossFunction(previous_x)
 
@@ -101,7 +109,7 @@ def gradientDescent(lossFunction, xinit, maxIters=100, loss_threshold=1e-5, step
     1) the current loss becomes acceptable because it falls below the loss threshold 
     2) the loss barely changes. Mathematically, the ratio between the current to previous loss is very close to 1. Thus,
     the absolute value of the log of that ratio is close to 0) """
-    while iteration < maxIters and current_loss > loss_threshold and abs(log(loss_ratio)) > 1e-4:
+    while iteration < max_iterations and current_loss > loss_threshold and abs(log(loss_ratio)) > 1e-4:
 
         current_x -= current_grad * step_size
         current_grad = gradient(current_x)
@@ -147,7 +155,8 @@ def gradientDescent(lossFunction, xinit, maxIters=100, loss_threshold=1e-5, step
     return iteration, current_x
 
 
-iters, x = gradientDescent(loss, np.array([[0.6, 0.02]]).astype(np.float64).T, 10000, 1e-10, 1e-2)
-print("Took {} iterations. new x = {}".format(iters, x))
-visualizeLoss(loss, -0.8, 0.8, -0.1, 0.1)
-plt.show()
+if __name__ == "__main__":
+    iters, x = gradientDescent(loss, np.array([[0.6, 0.02]]).astype(np.float64).T, 10000, 1e-10, 1e-2)
+    print("Took {} iterations. new x = {}".format(iters, x))
+    visualizeLoss(loss, -0.9, 0.9, -0.1, 0.1)
+    plt.show()
