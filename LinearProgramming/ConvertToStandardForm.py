@@ -1,3 +1,4 @@
+from ordered_set import OrderedSet
 from functools import reduce
 import operator
 
@@ -9,6 +10,10 @@ class Objective:
     def __init__(self, objective_expression):
         (self.min_or_max, self.coeffs, self.decision_vars) = parse_objective(objective_expression)
 
+    def standardize(self):
+        if(self.min_or_max == "max"):
+            self.min_or_max == "min"
+            self.coeffs = [-coeff for coeff in self.coeffs]
 
 class Constraint:
     def __init__(self, constraint_expression=None, slack_name=None):
@@ -55,11 +60,18 @@ class Constraint:
             self.coeffs.append(-1.0)
             self.constraint_type = '='
 
-
+    def __str__(self):
+        expression  = "+ ".join(f"{coeff}{var} " for coeff, var in zip(self.coeffs, self.decision_vars))
+        expression += f"{self.constraint_type} {self.right_hand_side}"
+        return expression
 class LinearProgram:
-    def __init__(self, objective, constraints):
-        self.objective: Objective = Objective(objective)
+    def __init__(self, objective, constraints): # TODO break me up
+        self.objective: Objective = Objective(objective) #TODO make min
+        self.objective.standardize()
+
         self.constraints: list[Constraint] = [Constraint(constraint) for constraint in constraints]
+        
+        #TODO stop iterating over self.constriant so many times (slow?)
 
         objective_vars = set(self.objective.decision_vars)
         constraint_vars = set().union(*[constraint.decision_vars for constraint in self.constraints])
@@ -120,26 +132,38 @@ class LinearProgram:
         and add x', x'' >= 0 as a slack variable constraint)
         """
 
-        print("F")
+        A_rows = len([c for c in self.constraints if c.constraint_type=='='])
+
+        x = OrderedSet()# set()
+        for constraint in self.constraints:
+            if constraint.constraint_type == '=':
+                x.update(constraint.decision_vars)
+        
+        print(x.items)
+
+        A_cols = len(x)
+
+        self.A = np.zeros((A_rows, A_cols))
+        self.b = np.zeros((A_cols, 1)) 
+        # TODO self.c
+        A_row_idx = 0
+        for constraint in self.constraints:
+            if(constraint.constraint_type == '='):
+                self.b[A_row_idx] = constraint.right_hand_side
+                for coeff, var in zip(constraint.coeffs, constraint.decision_vars):
+                    A_col_idx = x.index(var)
+                    self.A[A_row_idx, A_col_idx] = coeff
+                A_row_idx+=1
 
 
-"""
-inequality constriants: ax >= b
-ax >= b
-ax - b >= 0
-ax - b = x'
+        self.c_transposed = np.zeros((1, A_cols))
+        for coeff, var in zip(self.objective.coeffs, self.objective.decision_vars):
+            c_col_idx = x.index(var)
+            self.c_transposed[0, c_col_idx] = coeff
 
-x' >= 0
-ax - x' = b
-
-
-inequality constriants: ax <= b
--ax >= -b
-
-x' >= 0
--ax - x' = -b
-"""
-
+        print(f"A:\n{self.A}")
+        print(f"b:\n{self.b}")
+        print(f"c^T:{self.c_transposed}")
 
 if __name__ == "__main__":
     objective = "max 3x_1 - 2x_2 - x_3 + x_4"
