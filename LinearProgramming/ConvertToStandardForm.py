@@ -16,7 +16,7 @@ class Constraint:
             self.coeffs = [1.0]
             self.decision_vars = [slack_name]
             self.constraint_type = '>='
-            self.right_hand_side = [0.0]
+            self.right_hand_side = 0.0
 
         else:
             (self.coeffs, self.decision_vars, self.constraint_type,
@@ -69,6 +69,10 @@ class LinearProgram:
             raise Exception(
                 f"{extraneous_vars} found in constraints but not in objective")
 
+        extraneous_vars = objective_vars - constraint_vars
+        if extraneous_vars != set():
+            raise Exception(f"{extraneous_vars} found in objective but not in constraints")
+
         # ensure decision variable naming con't match with slack and artifical variable naming
         # for var in objective_vars:
         #     assert(
@@ -76,22 +80,47 @@ class LinearProgram:
         #     assert(
         #         'artif_' not in var), f"Decision variable {var} cannot start with \"artif_\" since that naming is reserved for artificial variables"
 
-        unconstrained_vars = objective_vars - constraint_vars
-        if unconstrained_vars != set():
-            print(f"Found Unconstrianed Variables: {unconstrained_vars}")
-
-        slack_var_constraints = []
+        """TODO optimize: dont add slack variable for simple relations like x >= 3 
+        instead add (x=x'+3) to a table of special constraints that dont make it to the final A matrix
+        and add x' >= 0 as a slack variable constraint)
+        """
+        # Add slack variables to turn ineqaulity constraints into equality constraints
         slack_var_count = 0
         for constraint in self.constraints:
             if constraint.needs_slack_variable():
                 new_slack_var = f"slack_{slack_var_count}"
                 constraint.convert_to_equality(new_slack_var)
-                slack_var_constraints.append(Constraint(slack_name=new_slack_var))
+                self.constraints.append(Constraint(slack_name=new_slack_var))
                 slack_var_count += 1
-        self.constraints += slack_var_constraints
+
+        # now, all constraints should be equality or non-negativity constraints
+
+        # identifying the unconstrained variables as those appearing in equality but not non-negativity constraints
+        equality_vars, non_negativity_vars = set(), set()
+        for constraint in self.constraints:
+            if constraint.constraint_type == '=':
+                equality_vars.update(constraint.decision_vars)
+            else:
+                non_negativity_vars.update(constraint.decision_vars)
+        unconstrained_vars = equality_vars - non_negativity_vars
+
+        # Add artifical variables to represent unconstrained variables
+        artifical_base = "base"
+        if(unconstrained_vars):
+            self.constraints.append(Constraint(slack_name=artifical_base))
+        for unconstrained_var in unconstrained_vars:
+            artifical_var = unconstrained_var+'_artif'
+            # adding artifical constraint: unconstrained_var = artifical_var - artifical_base
+            self.constraints.append(Constraint(f"{unconstrained_var}-{artifical_var}+{artifical_base}=0"))
+            self.constraints.append(Constraint(slack_name=artifical_var))
+
+        """TODO optimize: substitute artifical equality constriant into preexsiting equlaity constrinats and objective
+        instead add (x=x'-x'') to a table of special constraints, 
+        replace all instances of x in objective and original constraints with (x'-x'') (and appropriatly distribute coefficients of x)
+        and add x', x'' >= 0 as a slack variable constraint)
+        """
+
         print("F")
-        # for unconstrained_var in unconstrained_vars:
-        # introduce artifical variable
 
 
 """
@@ -113,8 +142,7 @@ x' >= 0
 
 
 if __name__ == "__main__":
-    # objective = "max 3x_1 - 2x_2 - x_3 + x_4"
-    objective = "max 3x_1 - 2x_2 - x_3 + x_4 + arti"
+    objective = "max 3x_1 - 2x_2 - x_3 + x_4"
     constraints = [
         "4x_1 - x_2 + x_4 <= 6",
         "-7x_1 + 8x_2 + x_3 >= 7",
