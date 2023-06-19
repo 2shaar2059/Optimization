@@ -89,5 +89,7 @@ if __name__ == "__main__":
         "x_3  >= 0",
     ]
     parsed_objective = parse_objective(objective)
-    parsed_constraints = parse_constraints(constraints)
+    parsed_constraints = [parse_constraint(constraint) for constraint in constraints]
+    print(parsed_objective)
+    print(parsed_constraints)
     print("done")

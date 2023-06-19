@@ -11,7 +11,7 @@ class Objective:
         (self.min_or_max, self.coeffs, self.decision_vars) = parse_objective(objective_expression)
 
     def standardize(self):
-        if(self.min_or_max == "max"):
+        if (self.min_or_max == "max"):
             self.min_or_max == "min"
             self.coeffs = [-coeff for coeff in self.coeffs]
 
@@ -47,11 +47,11 @@ class Constraint:
         Args:
             slack_var_name (str): name of slack variable to introduce
         """
-        if(self.constraint_type == '>='):
+        if (self.constraint_type == '>='):
             self.decision_vars.append(slack_var_name)
             self.coeffs.append(-1.0)
             self.constraint_type = '='
-        elif(self.constraint_type == '<='):
+        elif (self.constraint_type == '<='):
             self.decision_vars.append(slack_var_name)
             self.coeffs.append(1.0)
             self.constraint_type = '='
@@ -65,10 +65,16 @@ class Constraint:
 class LinearProgram:
     # TODO stop iterating over self.constriant so many times (slow?)
     def __init__(self, objective, constraints):
-        self.objective: Objective = Objective(objective)
+        """Create a LP in standard form (min c^Tx s.t. Ax = b, x>=0)
+
+        Args:
+            objective (_type_): _description_
+            constraints (_type_): _description_
+        """
+        self.objective = Objective(objective)
         self.objective.standardize()
 
-        self.constraints: list[Constraint] = [Constraint(constraint) for constraint in constraints]
+        self.constraints = [Constraint(constraint) for constraint in constraints]
 
         self.__check_extraneous_vars()
         self.__create_slack_vars()
@@ -92,9 +98,9 @@ class LinearProgram:
 
         # ensure decision variable naming con't match with slack and artifical variable naming
         for var in objective_vars:
-            assert(
+            assert (
                 'slack' not in var), f"Decision variable {var} cannot start with \"slack_\" since that naming is reserved for slack variables"
-            assert(
+            assert (
                 'artif' not in var), f"Decision variable {var} cannot start with \"artif_\" since that naming is reserved for artificial variables"
 
     def __create_slack_vars(self):
@@ -123,7 +129,7 @@ class LinearProgram:
 
         # Add artifical variables to represent unconstrained variables
         artifical_base = "base"
-        if(unconstrained_vars):
+        if (unconstrained_vars):
             self.constraints.append(Constraint(slack_name=artifical_base))
         for unconstrained_var in unconstrained_vars:
             artifical_var = unconstrained_var+'_artif'
@@ -152,17 +158,17 @@ class LinearProgram:
         self.b = np.zeros((A_rows, 1))
         A_row_idx = 0
         for constraint in self.constraints:
-            if(constraint.constraint_type == '='):
+            if (constraint.constraint_type == '='):
                 self.b[A_row_idx] = constraint.right_hand_side
                 for coeff, var in zip(constraint.coeffs, constraint.decision_vars):
                     A_col_idx = x.index(var)
                     self.A[A_row_idx, A_col_idx] = coeff
                 A_row_idx += 1
 
-        self.c_transposed = np.zeros((1, A_cols))
+        self.c = np.zeros((1, A_cols))
         for coeff, var in zip(self.objective.coeffs, self.objective.decision_vars):
             c_col_idx = x.index(var)
-            self.c_transposed[0, c_col_idx] = coeff
+            self.c[0, c_col_idx] = coeff
 
         self.x = x.items
 
@@ -176,9 +182,6 @@ if __name__ == "__main__":
         "x_1  >= 0",
         "x_2  >= 0",
         "x_3  >= 0",
-
-        # "_xsdf  >= 0",
-        # "sdfx  >= 0",
     ]
 
     lp = LinearProgram(objective, constraints)
@@ -186,4 +189,4 @@ if __name__ == "__main__":
     print(f"A:\n{lp.A}")
     print(f"x: {lp.x}")
     print(f"b:\n{lp.b}")
-    print(f"c^T:{lp.c_transposed}")
+    print(f"c^T:{lp.c}")
