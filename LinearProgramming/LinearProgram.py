@@ -11,9 +11,9 @@ class Objective:
         (self.min_or_max, self.coeffs, self.decision_vars) = parse_objective(objective_expression)
 
     def standardize(self):
-        if (self.min_or_max == "max"):
-            self.min_or_max == "min"
-            self.coeffs = [-coeff for coeff in self.coeffs]
+        if (self.min_or_max == "min"):
+            self.min_or_max == "max"
+            self.coeffs *= -1
 
 
 class Constraint:
@@ -23,14 +23,13 @@ class Constraint:
             self.decision_vars = [slack_name]
             self.constraint_type = '>='
             self.right_hand_side = 0.0
-
         else:
             (self.coeffs, self.decision_vars, self.constraint_type,
              self.right_hand_side) = parse_constraint(constraint_expression)
 
     def __is_non_negativity(self):
         return (self.constraint_type == '>=' and
-                self.coeffs == [1.0] and
+                (len(self.coeffs) == 1 and self.coeffs[0] == 1.0) and
                 self.right_hand_side in [0.0, -0.0])
 
     def __is_equality(self):
@@ -49,11 +48,11 @@ class Constraint:
         """
         if (self.constraint_type == '>='):
             self.decision_vars.append(slack_var_name)
-            self.coeffs.append(-1.0)
+            self.coeffs = np.append(self.coeffs, [-1.0])
             self.constraint_type = '='
         elif (self.constraint_type == '<='):
             self.decision_vars.append(slack_var_name)
-            self.coeffs.append(1.0)
+            self.coeffs = np.append(self.coeffs, [1.0])
             self.constraint_type = '='
 
     def __str__(self):
@@ -87,21 +86,20 @@ class LinearProgram:
         objective_vars = set(self.objective.decision_vars)
         constraint_vars = set().union(*[constraint.decision_vars for constraint in self.constraints])
 
-        extraneous_vars = constraint_vars - objective_vars
-        if extraneous_vars != set():
-            raise Exception(
-                f"{extraneous_vars} found in constraints but not in objective")
+        non_descion_vars = constraint_vars - objective_vars
+        if non_descion_vars != set():
+            print(f"{non_descion_vars} appear in constraints but in objective")
 
-        extraneous_vars = objective_vars - constraint_vars
-        if extraneous_vars != set():
-            raise Exception(f"{extraneous_vars} found in objective but not in constraints")
+        unconstrained_vars = objective_vars - constraint_vars
+        if unconstrained_vars != set():
+            print(f"{unconstrained_vars} unconstrained")
 
         # ensure decision variable naming con't match with slack and artifical variable naming
         for var in objective_vars:
             assert (
-                'slack' not in var), f"Decision variable {var} cannot start with \"slack_\" since that naming is reserved for slack variables"
+                'slack' not in var), f"Decision variable {var} cannot start with \"slack_\"; that naming is reserved for slack variables"
             assert (
-                'artif' not in var), f"Decision variable {var} cannot start with \"artif_\" since that naming is reserved for artificial variables"
+                'artif' not in var), f"Decision variable {var} cannot start with \"artif_\"; that naming is reserved for artificial variables"
 
     def __create_slack_vars(self):
         """TODO optimize: dont add slack variable for simple relations like x >= 3
@@ -186,7 +184,8 @@ if __name__ == "__main__":
 
     lp = LinearProgram(objective, constraints)
 
+    print(f"Problem type:\n{lp.objective.min_or_max}")
+    print(f"c^T:{lp.c}")
     print(f"A:\n{lp.A}")
     print(f"x: {lp.x}")
     print(f"b:\n{lp.b}")
-    print(f"c^T:{lp.c}")

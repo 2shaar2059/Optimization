@@ -1,5 +1,5 @@
 from enum import Enum
-
+import numpy as np
 
 def parse_linear_expression(expression):
     # remove spaces from expression
@@ -50,7 +50,7 @@ def parse_linear_expression(expression):
     decision_vars.append(decision_var)
     assert len(coeffs) == len(decision_vars)
 
-    return (coeffs, decision_vars)
+    return (np.array(coeffs), decision_vars)
 
 
 def parse_objective(objective):

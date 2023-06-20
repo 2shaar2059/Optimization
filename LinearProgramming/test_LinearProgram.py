@@ -3,6 +3,49 @@ import unittest
 import numpy as np
 
 
+class Test_LPparser(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        print(str('-'*100))
+
+    def test_parse_constraint(self):
+        constraint = Constraint("4x_1 - x_2 + x_4 <= 6")
+
+        coeffs_expected = np.array([4, -1,  1])
+
+        self.assertEqual(len(coeffs_expected), len(constraint.coeffs))
+        for i in range(len(coeffs_expected)):
+            self.assertAlmostEqual(coeffs_expected[i], constraint.coeffs[i], delta=1e-10)
+
+
+class Test_Constraint(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        print(str('-'*100))
+
+    def test_convert_LessThan_to_equality_slack(self):
+        constraint = Constraint("4x_1 - x_2 + x_4 <= 6")
+        constraint.convert_to_equality("slack0")
+
+        coeffs_expected = np.array([4, -1,  1,  1])
+        self.assertEqual(len(coeffs_expected), len(constraint.coeffs))
+        for i in range(len(coeffs_expected)):
+            self.assertAlmostEqual(coeffs_expected[i], constraint.coeffs[i], delta=1e-10)
+
+    def test_convert_GreaterThan_to_equality_slack(self):
+        constraint = Constraint("4x_1 - x_2 + x_4 >= 6")
+        constraint.convert_to_equality("slack0")
+
+        coeffs_expected = np.array([4, -1,  1,  -1])
+        self.assertEqual(len(coeffs_expected), len(constraint.coeffs))
+        for i in range(len(coeffs_expected)):
+            self.assertAlmostEqual(coeffs_expected[i], constraint.coeffs[i], delta=1e-10)
+
+
 class Test_LinearProgram(unittest.TestCase):
     def setUp(self):
         pass
@@ -28,13 +71,17 @@ class Test_LinearProgram(unittest.TestCase):
             [1,  1,  4,  0,  0,  0,  0,  0],
             [0,  0,  1,  0,  0,  0, -1,  1,]])
         b_expected = np.array([[6, 7, 12, 0]]).T
-        c_expected = np.array([[-3,  2, -1,  0,  1,  0,  0,  0]])
+        c_expected = np.array([3,  -2, 1,  0,  -1,  0,  0,  0])
 
-        x: ['x_1', 'x_2', 'x_4', 'slack_0', 'x_3', 'slack_1', 'x_4_artif', 'base']
+        for i in range(len(lp.A)):
+            for j in range(len(lp.A[0])):
+                self.assertAlmostEqual(A_expected[i, j], lp.A[i, j], delta=1e-10)
 
-        self.assertLess(np.abs(A_expected - lp.A).max(), 1e-10)
-        self.assertLess(np.abs(b_expected - lp.b).max(), 1e-10)
-        self.assertLess(np.abs(c_expected - lp.c).max(), 1e-10)
+        for i in range(len(lp.b)):
+            self.assertAlmostEqual(b_expected[i], lp.b[i], delta=1e-10)
+
+        for i in range(len(lp.c)):
+            self.assertAlmostEqual(c_expected[i], lp.c[0, i], delta=1e-10)
 
 
 if __name__ == "__main__":
