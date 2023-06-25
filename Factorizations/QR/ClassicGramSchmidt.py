@@ -29,7 +29,25 @@ if __name__ == "__main__":
     print("A:\n", A)
 
     Q, R = ClassicGramSchmidt(A)
+    print("Q:\n", Q)
+    print("R:\n", R)
+    print("Q.T * Q:\n", Q.T @ Q)
+    print("Q * Q.T:\n", Q @ Q.T)
+    print("QR:\n", Q @ R)
 
+    ###############################
+
+    epsilon = 1e-6
+    A = np.array(
+        [
+            [1, 1, 1],
+            [epsilon, epsilon, 0],
+            [epsilon, 0, epsilon],
+        ]
+    )
+    print("A:\n", A)
+
+    Q, R = ClassicGramSchmidt(A)
     print("Q:\n", Q)
     print("R:\n", R)
     print("Q.T * Q:\n", Q.T @ Q)
