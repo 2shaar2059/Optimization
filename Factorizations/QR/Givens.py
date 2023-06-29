@@ -24,23 +24,24 @@ def Givens(A):
                 G[i, i] = c
                 R = G @ R
                 Q = Q @ G.T
-                print(i, j, 57 * theta)
-                print(f"G: {G}")
-                print(f"R: {R}")
-                print()
+                # print(i, j, 57 * theta)
+                # print(f"G: {G}")
+                # print(f"R: {R}")
+                # print()
     return Q, R
 
 
 if __name__ == "__main__":
+    np.set_printoptions(suppress=True)
     A = np.array(
         [
             [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 10],
+            [0, 0, 0],
+            [-1, 0, 10],
         ]
     )
     print(np.linalg.det(A))
     Q, R = Givens(A)
     print(f"Q: {Q}")
     print(f"R: {R}")
-    print(Q @ R)
+    print(f"Recovered A:\n {Q@R}")
