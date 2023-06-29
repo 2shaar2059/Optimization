@@ -22,8 +22,17 @@ def Givens(A):
                 G[i - 1, i] = s
                 G[i, i - 1] = -s
                 G[i, i] = c
-                R = G @ R
-                Q = Q @ G.T
+
+                tmp0 = c * R[i - 1] + s * R[i]
+                tmp1 = -s * R[i - 1] + c * R[i]
+                R[i - 1] = tmp0
+                R[i] = tmp1
+
+                tmp0 = c * Q[:, i - 1] + s * Q[:, i]
+                tmp1 = -s * Q[:, i - 1] + c * Q[:, i]
+                Q[:, i - 1] = tmp0
+                Q[:, i] = tmp1
+
                 # print(i, j, 57 * theta)
                 # print(f"G: {G}")
                 # print(f"R: {R}")

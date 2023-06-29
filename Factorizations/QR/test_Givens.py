@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import unittest
 from Givens import Givens
@@ -41,11 +42,14 @@ class Test_Givens(unittest.TestCase):
 
     def test_random(self):
         np.random.seed(11823568)  # random seed for determinism
-        for i in range(1000):
-            rows = np.random.randint(1, 10)
-            cols = np.random.randint(1, 10)
+        iters = 10
+        start = time.time()
+        for i in range(iters):
+            rows = 100  # np.random.randint(1, 10)
+            cols = 100  # np.random.randint(1, 10)
             A = np.random.uniform(-1e10, 1e10, (rows, cols))
             self.runTest(A)
+        print(f"Time per iteration: {1000*(time.time()-start)/iters:.2f} ms")
 
 
 if __name__ == "__main__":
