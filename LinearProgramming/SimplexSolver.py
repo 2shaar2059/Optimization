@@ -159,6 +159,8 @@ class SimplexSolver:
 
 if __name__ == "__main__":
     np.set_printoptions(linewidth=999)
+
+    # Example from wenshenpsu Linear Programming YouTube Series
     A = np.array(
         [
             [-6, 0, 1, -2, 2],
