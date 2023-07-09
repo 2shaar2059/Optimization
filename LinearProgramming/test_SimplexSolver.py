@@ -33,5 +33,5 @@ class Test_SimplexSolver(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    np.set_printoptions(suppress=True)  # don't use scientific notation
+    np.set_printoptions(linewidth=999, suppress=True)
     unittest.main()
