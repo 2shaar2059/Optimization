@@ -53,6 +53,28 @@ class Test_SimplexSolver(unittest.TestCase):
 
         self.assertLessEqual(abs(expected_solution - solution).max(), 1e-15)
 
+    def test_degeneracy_ok(self):
+        # Example from wenshenpsu Linear Programming YouTube Series
+        A = np.array(
+            [
+                [8, -2, 1, -1, 1, 0, 0],
+                [2, 5, 0, 2, 0, 1, 0],
+                [1, -1, 2, -4, 0, 0, 1],
+            ]
+        )
+        b = np.array([[50, 150, 100]]).T
+        c = np.array(
+            [
+                [2, 4, -4, 7, 0, 0, 0],
+            ]
+        ).T
+        ss = SimplexSolver(A, b, c)
+        solution = ss.solve([4, 5, 6])
+
+        expected_solution = np.array([0, 0, 50, 0, 0, 150, 0])
+
+        self.assertLessEqual(abs(expected_solution - solution).max(), 1e-13)
+
 
 if __name__ == "__main__":
     np.set_printoptions(linewidth=999, suppress=True)

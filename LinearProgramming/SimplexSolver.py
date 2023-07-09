@@ -7,6 +7,8 @@ from rref import RREF
     non-basic variabels == 0
 """
 
+ZERO_TOLERANCE = 1e-10
+
 
 class Tableau:
     def __init__(self, A=None, b=None, c=None):
@@ -138,9 +140,11 @@ class SimplexSolver:
         for pivot_to_leave in range(self.num_basic_vars):
             coeff = self.A[pivot_to_leave, entering_variable]
             if 0 < coeff:
-                if self.b[pivot_to_leave] == 0.0:
-                    print(f"Degeneracy detected: b[{pivot_to_leave}] = 0")
-                    return None  # TODO handle this case and don't return
+                if abs(self.b[pivot_to_leave]) < ZERO_TOLERANCE:
+                    print(
+                        f"Degeneracy detected: b[{pivot_to_leave}] = {self.b[pivot_to_leave]}"
+                    )
+                    # TODO handle this case and don't return
                 upper_bound = self.b[pivot_to_leave] / coeff
                 if upper_bound < supremum:
                     supremum = upper_bound
@@ -160,9 +164,8 @@ class SimplexSolver:
     def objective(self):
         return np.dot(self.c_original.T, self.solution())[0]
 
-    def solve(self):
-        # self.compute_initial_BFS([1, 2])
-        self.compute_initial_BFS()
+    def solve(self, initial_basis=None):
+        self.compute_initial_BFS(initial_basis)
         prev_objective = self.objective()
 
         print(self.tableau)
