@@ -1,0 +1,20 @@
+Initilaization
+    solve auxilalry problem
+        aux problem infeasible?
+
+pivoting rule?
+
+Detecting unbounded feasible region
+
+detect stopping
+
+detect cycles
+
+degenerate pivots (basic variable = 0)
+
+Test cases for each of the above
+
+
+
+CentralPathSolver.py
+    interior point method?

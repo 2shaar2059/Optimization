@@ -1,5 +1,5 @@
-from enum import Enum
 import numpy as np
+
 
 def parse_linear_expression(expression):
     # remove spaces from expression
@@ -16,20 +16,22 @@ def parse_linear_expression(expression):
     decision_var = ""
     for char in expression:
         numeric = char.isnumeric()
-        negative = (char == '-')
-        add = (char == '+')
+        negative = char == "-"
+        add = char == "+"
 
         # by default, next_state stays as the current state
         next_state = curr_state
 
         if curr_state == PARSING_COEFFICIENT:
-            if not (numeric or add or negative):  # done parsing coefficent, start parsing decision variable
+            if not (
+                numeric or add or negative
+            ):  # done parsing coefficent, start parsing decision variable
                 decision_var += char
-                if(coeff == ""):
+                if coeff == "":
                     coeff = "1"
-                elif(coeff == "-"):
+                elif coeff == "-":
                     coeff = "-1"
-                elif(coeff == "+"):
+                elif coeff == "+":
                     coeff = "1"
                 coeffs.append(float(coeff))
                 coeff = ""  # reset coefficient because it has been completely parsed
@@ -37,10 +39,14 @@ def parse_linear_expression(expression):
             else:  # not done parsing coefficent
                 coeff += char
         elif curr_state == PARSING_DECISION_VARIABLE:
-            if(add or negative):  # done parsing decision variable, start parsing coefficent
+            if (
+                add or negative
+            ):  # done parsing decision variable, start parsing coefficent
                 coeff += char
                 decision_vars.append(decision_var)
-                decision_var = ""  # reset decision_var because it has been completely parsed
+                decision_var = (
+                    ""  # reset decision_var because it has been completely parsed
+                )
                 next_state = PARSING_COEFFICIENT
             else:
                 decision_var += char
@@ -55,13 +61,15 @@ def parse_linear_expression(expression):
 
 def parse_objective(objective):
     min_or_max = "min" if "min" in objective else "max" if "max" in objective else None
-    assert(min_or_max in ["min", "max"])
+    assert min_or_max in ["min", "max"]
     expression = objective.strip(min_or_max)  # remove min or max from objective
     return (min_or_max, *parse_linear_expression(expression))
 
 
 def parse_constraint(constraint_expression):
-    constraint_expression = "".join(constraint_expression.split(" "))  # remove spaces from constraint_expression
+    constraint_expression = "".join(
+        constraint_expression.split(" ")
+    )  # remove spaces from constraint_expression
 
     expression = None
     right_hand_side = None
@@ -70,7 +78,7 @@ def parse_constraint(constraint_expression):
         if constraint_type in constraint_expression:
             expression, right_hand_side = constraint_expression.split(constraint_type)
             break
-    if constraint_type == None:
+    if constraint_type is None:
         raise Exception("Constraint was neither an inequality nor equality")
 
     (coeffs, decision_vars) = parse_linear_expression(expression)
