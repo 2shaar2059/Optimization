@@ -1,4 +1,3 @@
-from LinearProgram import LinearProgram
 import numpy as np
 from rref import RREF
 
@@ -9,13 +8,13 @@ from rref import RREF
 """
 
 
-class Tableau:
+class SimplexSolver:
     def __init__(self, A, b, c):
         num_constraints, num_variables = A.shape
         self.c_original = c
         self.num_basic_vars = num_constraints
         self.num_nonbasic_vars = num_variables - num_constraints
-        self.matrix = np.concatenate(
+        self.tableau = np.concatenate(
             (
                 np.concatenate((A, b), axis=1),
                 np.concatenate((c.T, [[0]]), axis=1),
@@ -26,20 +25,20 @@ class Tableau:
     def compute_initial_BFS(self, initial_basis=None):
         # TODO initialize basis by solving auxillary LP
         self.basis = initial_basis or list(range(self.num_basic_vars))
-        self.matrix = RREF(self.matrix, self.basis)[0]
+        self.tableau = RREF(self.tableau, self.basis)[0]
         assert np.all(self.b >= 0)  # BFS should be positive
 
     @property
     def A(self):
-        return self.matrix[:-1, :-1]
+        return self.tableau[:-1, :-1]
 
     @property
     def b(self):
-        return self.matrix[:-1, -1]
+        return self.tableau[:-1, -1]
 
     @property
     def c(self):
-        return self.matrix[-1, :-1]
+        return self.tableau[-1, :-1]
 
     def unbounded(self):
         return np.all(self.c <= 0)
@@ -58,7 +57,7 @@ class Tableau:
             entering_variable (_type_): index into FULL variable list
         """
         self.basis[prev_basic_var_idx] = entering_variable
-        pivot_row = self.matrix[prev_basic_var_idx]
+        pivot_row = self.tableau[prev_basic_var_idx]
         new_pivot = pivot_row[entering_variable]
         assert 1e-14 < abs(new_pivot)  # TODO what if this fails?
 
@@ -66,11 +65,11 @@ class Tableau:
         pivot = pivot_row[entering_variable]
         assert abs(pivot - 1) < 1e-14
 
-        for row in range(self.matrix.shape[0]):
+        for row in range(self.tableau.shape[0]):
             if row != prev_basic_var_idx:
                 assert row != prev_basic_var_idx
-                self.matrix[row] -= (
-                    self.matrix[row, entering_variable] / pivot
+                self.tableau[row] -= (
+                    self.tableau[row, entering_variable] / pivot
                 ) * pivot_row
 
     def find_variable_to_enter_basis(self):
@@ -104,13 +103,6 @@ class Tableau:
             return None
         return basic_var_to_exit
 
-        """TODO: add logic to detect the objective would not increase
-        initial_objective = 0  # TODO
-        final_objective = 0  # TODO
-        assert final_objective <= initial_objective
-
-        """
-
     def solution(self):
         solution = np.zeros_like(self.c)
         for i, basic_var in enumerate(self.basis):
@@ -120,20 +112,49 @@ class Tableau:
     def objective(self):
         return np.dot(self.c_original.T, self.solution())[0]
 
+    def solve(self):
+        self.compute_initial_BFS([1, 2])
+        prev_objective = self.objective()
 
-# class SimplexSolver:
-#     def initialize():
-#         bfs = np.zeros_like(self.c)  # TODO initalize by solving the auxillary LP
-#         tableau = TODO
+        print(self.tableau)
+        print(f"Basis: {self.basis}")
+        print(self.solution())
+        print(f"initial Objective: {prev_objective}")
+        print()
 
-#         return tableau
+        """TODO: add logic to detect the objective would not increase
+        initial_objective = 0  # TODO
+        final_objective = 0  # TODO
+        assert final_objective <= initial_objective
 
+        """
+        i = 0
 
-#     def solve(lp):
-#         tableau = initialize(lp)
-#         while not terminated(tableau):
-#             tableau = pivot(tableau)
-#         return tableau.solution()
+        while not self.terminated():
+            new_basic_var = self.find_variable_to_enter_basis()
+            print(f"Entering basis: {new_basic_var}")
+
+            exiting_pivot = self.find_variable_to_exit_basis(new_basic_var)
+            if exiting_pivot is None:  # early termination
+                break
+            print(f"Exiting basis: {self.basis[exiting_pivot]}")
+
+            self.pivot(exiting_pivot, new_basic_var)
+            print(f"Basis: {self.basis}")
+            print(self.tableau)
+            assert np.all(self.b >= 0)  # BFS should be positive
+
+            curr_objective = self.objective()
+            print(f"Iter {i} Objective: {curr_objective}")
+
+            assert curr_objective <= prev_objective
+
+            print(self.solution())
+            print()
+
+            prev_objective = curr_objective
+            i += 1
+        return self.solution()
 
 
 if __name__ == "__main__":
@@ -150,27 +171,5 @@ if __name__ == "__main__":
             [-4, 1, 1, 7, 3],
         ]
     ).T
-    t = Tableau(A, b, c)
-    print(t.matrix)
-    t.compute_initial_BFS([2, 1])
-    print(t.basis)
-    print(t.matrix)
-    print(f"initial Objective: {t.objective()}")
-    print(t.solution())
-    print()
-    i = 0
-    while not t.terminated():
-        new_basic_var = t.find_variable_to_enter_basis()
-        print(f"Entering basis: {new_basic_var}")
-        exiting_pivot = t.find_variable_to_exit_basis(new_basic_var)
-        if exiting_pivot is None:  # early termination
-            break
-        print(f"Exiting basis: {t.basis[exiting_pivot]}")
-        t.pivot(exiting_pivot, new_basic_var)
-        print(t.basis)
-        print(t.matrix)
-        assert np.all(t.b >= 0)  # BFS should be positive
-        print(f"Iter {i} Objective: {t.objective()}")
-        print(t.solution())
-        print()
-        i += 1
+    ss = SimplexSolver(A, b, c)
+    ss.solve()
