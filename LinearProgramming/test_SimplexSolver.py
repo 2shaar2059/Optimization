@@ -10,7 +10,7 @@ class Test_SimplexSolver(unittest.TestCase):
     def tearDown(self):
         print(str("-" * 100))
 
-    def test_Simple(self):
+    def test_1(self):
         # Example from wenshenpsu Linear Programming YouTube Series
         A = np.array(
             [
@@ -28,6 +28,28 @@ class Test_SimplexSolver(unittest.TestCase):
         solution = ss.solve()
 
         expected_solution = np.array([1, 0, 0, 0, 6])
+
+        self.assertLessEqual(abs(expected_solution - solution).max(), 1e-15)
+
+    def test_2(self):
+        # Example from wenshenpsu Linear Programming YouTube Series
+        A = np.array(
+            [
+                [3, 2, 0, 1, 0, 0],
+                [-1, 1, 4, 0, 1, 0],
+                [2, -2, 5, 0, 0, 1],
+            ]
+        )
+        b = np.array([[60, 10, 50]]).T
+        c = np.array(
+            [
+                [-2, -3, -3, 0, 0, 0],
+            ]
+        ).T
+        ss = SimplexSolver(A, b, c)
+        solution = ss.solve()
+
+        expected_solution = np.array([8, 18, 0, 0, 0, 70])
 
         self.assertLessEqual(abs(expected_solution - solution).max(), 1e-15)
 
