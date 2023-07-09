@@ -4,15 +4,13 @@ from LPparser import parse_constraint, parse_objective
 
 
 class Objective:
-    def __init__(self, objective_expression):
-        (self.min_or_max, self.coeffs, self.decision_vars) = parse_objective(
-            objective_expression
-        )
+    def __init__(self, expression):
+        (self.min_or_max, self.c, self.decision_vars) = parse_objective(expression)
 
     def standardize(self):
         if self.min_or_max == "min":
             self.min_or_max == "max"
-            self.coeffs *= -1
+            self.c *= -1
 
 
 class Constraint:
@@ -176,7 +174,7 @@ class LinearProgram:
                 A_row_idx += 1
 
         self.c = np.zeros((1, A_cols))
-        for coeff, var in zip(self.objective.coeffs, self.objective.decision_vars):
+        for coeff, var in zip(self.objective.c, self.objective.decision_vars):
             c_col_idx = x.index(var)
             self.c[0, c_col_idx] = coeff
 
