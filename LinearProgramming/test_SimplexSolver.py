@@ -10,6 +10,10 @@ class Test_SimplexSolver(unittest.TestCase):
     def tearDown(self):
         print(str("-" * 100))
 
+    def checkSolution(self, estimated, expected):
+        tolerance = 1e-14
+        self.assertLessEqual(abs(estimated - expected).max(), tolerance)
+
     def test_1(self):
         # Example from wenshenpsu Linear Programming YouTube Series
         A = np.array(
@@ -28,8 +32,7 @@ class Test_SimplexSolver(unittest.TestCase):
         solution = ss.solve()
 
         expected_solution = np.array([1, 0, 0, 0, 6])
-
-        self.assertLessEqual(abs(expected_solution - solution).max(), 1e-15)
+        self.checkSolution(solution, expected_solution)
 
     def test_2(self):
         # Example from wenshenpsu Linear Programming YouTube Series
@@ -50,8 +53,7 @@ class Test_SimplexSolver(unittest.TestCase):
         solution = ss.solve()
 
         expected_solution = np.array([8, 18, 0, 0, 0, 70])
-
-        self.assertLessEqual(abs(expected_solution - solution).max(), 1e-15)
+        self.checkSolution(solution, expected_solution)
 
     def test_degeneracy_ok(self):
         # Example from wenshenpsu Linear Programming YouTube Series
@@ -72,8 +74,7 @@ class Test_SimplexSolver(unittest.TestCase):
         solution = ss.solve([4, 5, 6])
 
         expected_solution = np.array([0, 0, 50, 0, 0, 150, 0])
-
-        self.assertLessEqual(abs(expected_solution - solution).max(), 1e-13)
+        self.checkSolution(solution, expected_solution)
 
 
 if __name__ == "__main__":

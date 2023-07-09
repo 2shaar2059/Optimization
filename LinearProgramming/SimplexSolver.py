@@ -29,7 +29,7 @@ class Tableau:
 
     @property
     def b(self):
-        return self.matrix[:-1, -1]
+        return self.matrix[:-1, -1].reshape((-1, 1))
 
     @property
     def c(self):
@@ -66,11 +66,9 @@ class Tableau:
 
 class SimplexSolver:
     def __init__(self, A, b, c):
-        num_constraints, num_variables = A.shape
+        self.num_constraints, self.num_vars = A.shape
         self.c_original = c
-        self.num_basic_vars = num_constraints
-        self.num_nonbasic_vars = num_variables - num_constraints
-        self.num_vars = num_variables
+        self.num_basic_vars = self.num_constraints
         self.tableau = Tableau(A, b, c)
 
     @property
@@ -85,12 +83,12 @@ class SimplexSolver:
     def c(self):
         return self.tableau.c
 
-    def compute_initial_BFS(self, initial_basis=None):
+    def compute_initial_BFS(self, initial_basis=None, random_init=False):
         # TODO initialize basis by solving auxillary LP
         if initial_basis:
             self.basis = initial_basis
             self.tableau.reduce_BFS(self.basis)
-        else:
+        elif random_init:
             MAX_ITERS = 100
             found_bfs = False
             tableau = Tableau()
@@ -114,6 +112,41 @@ class SimplexSolver:
                     print("Infeasible")
 
             assert found_bfs
+        else:  # solve auxillary LP to find initial BFS
+            aux_system = np.concatenate((self.A.copy(), self.b.copy()), axis=1)
+            for i in range(self.num_constraints):
+                if aux_system[i, -1] < 0:
+                    aux_system[i] *= -1
+
+            # adding artificial variables
+            num_artif_vars = self.num_constraints
+
+            aux_system = np.insert(aux_system, [-1], np.eye(num_artif_vars), axis=1)
+
+            aux_A = aux_system[:, :-1]
+            aux_b = aux_system[:, -1].reshape((-1, 1))
+            aux_c = np.concatenate(
+                (np.zeros((self.num_vars, 1)), np.ones((num_artif_vars, 1))),
+                axis=0,
+            )
+            auxillary = SimplexSolver(aux_A, aux_b, aux_c)
+            print("Auxillary LP tableau:")
+            print(auxillary.tableau)
+            print()
+            aux_initial_basis = list(
+                range(self.num_vars, self.num_vars + num_artif_vars)
+            )
+            aux_soln = auxillary.solve(aux_initial_basis)
+            aux_obj = auxillary.objective()
+            assert aux_obj >= 0
+            if ZERO_TOLERANCE < aux_obj:  # couldn't set all artificial variables to 0
+                print(f"Auxillary LP's objective = {aux_obj}; original LP infeasible")
+                return None
+            else:
+                print("Solved Auxillary LP!")
+                print(aux_soln[: self.num_vars])
+                self.basis = np.argwhere(aux_soln[: self.num_vars] >= ZERO_TOLERANCE)
+                self.tableau.reduce_BFS(self.basis)
 
         assert np.all(self.b >= 0)  # BFS should be positive
 
@@ -164,7 +197,7 @@ class SimplexSolver:
     def objective(self):
         return np.dot(self.c_original.T, self.solution())[0]
 
-    def solve(self, initial_basis=None):
+    def solve(self, initial_basis=None, MAX_ITERS=1e99):
         self.compute_initial_BFS(initial_basis)
         prev_objective = self.objective()
 
@@ -175,7 +208,7 @@ class SimplexSolver:
         print()
 
         i = 0
-        while not self.terminated():
+        while not self.terminated() and i < MAX_ITERS:
             new_basic_var = self.find_new_basis_var()
             print(f"Entering basis: {new_basic_var}")
 
