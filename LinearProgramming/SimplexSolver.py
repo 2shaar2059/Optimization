@@ -1,5 +1,6 @@
 from LinearProgram import LinearProgram
 import numpy as np
+from rref import RREF
 
 """NOTES:
 
@@ -43,9 +44,10 @@ class Tableau:
         Returns:
             _type_: _description_
         """
-        initial_objective = TODO
+        initial_objective = 0  # TODO
+        self.matrix = RREF(self.matrix, idxs)[0]
 
-        final_objective = TODO
+        final_objective = 0  # TODO
 
         assert final_objective <= initial_objective
 
@@ -79,4 +81,6 @@ if __name__ == "__main__":
         ]
     ).T
     t = Tableau(A, b, c)
+    print(t.matrix)
+    t.pivot([1, 2])
     print(t.matrix)
