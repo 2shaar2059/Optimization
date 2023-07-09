@@ -22,9 +22,24 @@ class Tableau:
             axis=0,
         )
 
+    def compute_initial_BFS(self, initial_basis=None):
+        # TODO initialize basis by solving auxillary LP
+        self.basis = initial_basis or list(range(self.num_basic_vars))
+        self.matrix = RREF(self.matrix, self.basis)[0]
+
+        assert np.all(self.b >= 0)  # BFS should be positive
+
+    @property
+    def A(self):
+        return self.matrix[:-1, :-1]
+
+    @property
+    def b(self):
+        return self.matrix[:-1, -1]
+
     @property
     def c(self):
-        return self.tableau[-1, :-1]
+        return self.matrix[-1, :-1]
 
     def unbounded(self):
         return np.all(self.c <= 0)
@@ -35,21 +50,50 @@ class Tableau:
     def terminated(self):
         return np.all(self.c >= 0)
 
-    def pivot(self, idxs):
-        """pivot to try to decrease objective
+    def pivot(self, exiting_variable, entering_variable):
+        """pivot on entering_variable to add it to the basis and replace exiting_variable
 
         Args:
-            idxs (_type_): _description_
+            exiting_variable (int): index into
 
         Returns:
             _type_: _description_
         """
+
+        assert np.all(self.b >= 0)  # BFS should be positive
+
+    def find_variable_to_enter_basis(self):
+        """_summary_
+
+        Returns:
+            int: idx of variable with
+        """
+        assert not self.terminated()
+        return np.argmin(self.c)
+
+    def find_variable_to_exit_basis(self, entering_variable):
+        # TODO : find which basic variable becomes 0 after pushing entering_variable to minimize objective
+        assert np.all(self.b >= 0)  # BFS should be positive
+
+        supremum = 1e99
+        basic_var_to_exit = None
+        for pivot_row_idx, basic_var in enumerate(self.basis):
+            upper_bound = (
+                self.b[pivot_row_idx] / self.A[pivot_row_idx, entering_variable]
+            )
+            assert 0 < upper_bound  # TODO what if upper bound is negative?
+            if upper_bound < supremum:
+                supremum = upper_bound
+                basic_var_to_exit = basic_var
+        assert basic_var_to_exit is not None
+        return basic_var_to_exit
+        """TODO: add logic to detect the objective would not increase
         initial_objective = 0  # TODO
-        self.matrix = RREF(self.matrix, idxs)[0]
-
+        
         final_objective = 0  # TODO
-
         assert final_objective <= initial_objective
+
+        """
 
 
 # class SimplexSolver:
@@ -82,5 +126,9 @@ if __name__ == "__main__":
     ).T
     t = Tableau(A, b, c)
     print(t.matrix)
-    t.pivot([1, 2])
+    t.compute_initial_BFS([2, 1])
     print(t.matrix)
+    new_basic_var = t.find_variable_to_enter_basis()
+    print(f"Entering basis: {new_basic_var}")
+    var_to_exit_basis = t.find_variable_to_exit_basis(new_basic_var)
+    print(f"Exiting basis: {var_to_exit_basis}")
