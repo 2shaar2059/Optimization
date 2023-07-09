@@ -12,6 +12,7 @@ from rref import RREF
 class Tableau:
     def __init__(self, A, b, c):
         num_constraints, num_variables = A.shape
+        self.c_original = c
         self.num_basic_vars = num_constraints
         self.num_nonbasic_vars = num_variables - num_constraints
         self.matrix = np.concatenate(
@@ -26,7 +27,6 @@ class Tableau:
         # TODO initialize basis by solving auxillary LP
         self.basis = initial_basis or list(range(self.num_basic_vars))
         self.matrix = RREF(self.matrix, self.basis)[0]
-
         assert np.all(self.b >= 0)  # BFS should be positive
 
     @property
@@ -90,11 +90,6 @@ class Tableau:
         supremum = 1e99
         basic_var_to_exit = None
         for pivot_to_leave in range(self.num_basic_vars):
-            # exiting_var + self.A[pivot_to_leave, entering_variable] * entering =  self.b[pivot_to_leave]
-            # exiting_var  =  self.b[pivot_to_leave] - self.A[pivot_to_leave, entering_variable] * entering
-            # 0 <= exiting_var
-            # 0 <= self.b[pivot_to_leave] - self.A[pivot_to_leave, entering_variable] * entering
-            # self.A[pivot_to_leave, entering_variable] * entering <= self.b[pivot_to_leave]
             coeff = self.A[pivot_to_leave, entering_variable]
             if 0 < coeff:
                 upper_bound = self.b[pivot_to_leave] / coeff
@@ -107,7 +102,6 @@ class Tableau:
 
         """TODO: add logic to detect the objective would not increase
         initial_objective = 0  # TODO
-        
         final_objective = 0  # TODO
         assert final_objective <= initial_objective
 
@@ -118,6 +112,9 @@ class Tableau:
         for i, basic_var in enumerate(self.basis):
             solution[basic_var] = self.b[i]
         return solution
+
+    def objective(self):
+        return np.dot(self.c_original.T, self.solution())[0]
 
 
 # class SimplexSolver:
@@ -154,6 +151,10 @@ if __name__ == "__main__":
     t.compute_initial_BFS([2, 1])
     print(t.basis)
     print(t.matrix)
+    print(f"initial Objective: {t.objective()}")
+    print(t.solution())
+    print()
+    i = 0
     while not t.terminated():
         new_basic_var = t.find_variable_to_enter_basis()
         print(f"Entering basis: {new_basic_var}")
@@ -163,5 +164,7 @@ if __name__ == "__main__":
         print(t.basis)
         print(t.matrix)
         assert np.all(t.b >= 0)  # BFS should be positive
-
-    print(t.solution())
+        print(f"Iter {i} Objective: {t.objective()}")
+        print(t.solution())
+        print()
+        i += 1
