@@ -9,14 +9,17 @@ from rref import RREF
 
 
 class Tableau:
-    def __init__(self, A, b, c):
-        self.matrix = np.concatenate(
-            (
-                np.concatenate((A, b), axis=1),
-                np.concatenate((c.T, [[0]]), axis=1),
-            ),
-            axis=0,
-        )
+    def __init__(self, A=None, b=None, c=None):
+        if A is not None and b is not None and c is not None:
+            self.matrix = np.concatenate(
+                (
+                    np.concatenate((A, b), axis=1),
+                    np.concatenate((c.T, [[0]]), axis=1),
+                ),
+                axis=0,
+            )
+        else:
+            self.matrix = None
 
     @property
     def A(self):
@@ -65,6 +68,7 @@ class SimplexSolver:
         self.c_original = c
         self.num_basic_vars = num_constraints
         self.num_nonbasic_vars = num_variables - num_constraints
+        self.num_vars = num_variables
         self.tableau = Tableau(A, b, c)
 
     @property
@@ -81,8 +85,34 @@ class SimplexSolver:
 
     def compute_initial_BFS(self, initial_basis=None):
         # TODO initialize basis by solving auxillary LP
-        self.basis = initial_basis or list(range(self.num_basic_vars))
-        self.tableau.reduce_BFS(self.basis)
+        if initial_basis:
+            self.basis = initial_basis
+            self.tableau.reduce_BFS(self.basis)
+        else:
+            MAX_ITERS = 100
+            found_bfs = False
+            tableau = Tableau()
+            np.random.seed(19234813)  # random seed for determinism
+            for i in range(MAX_ITERS):
+                basis = np.random.choice(
+                    list(range(self.num_vars)),
+                    size=self.num_basic_vars,
+                    replace=False,
+                )
+                print(f"Trying {basis} as initial basis ... ", end="")
+                tableau.matrix = self.tableau.matrix.copy()
+                tableau.reduce_BFS(basis)
+                if np.all(tableau.b >= 0):
+                    print("Feasible!")
+                    self.tableau = tableau
+                    self.basis = basis
+                    found_bfs = True
+                    break
+                else:
+                    print("Infeasible")
+
+            assert found_bfs
+
         assert np.all(self.b >= 0)  # BFS should be positive
 
     def unbounded(self):
@@ -131,7 +161,8 @@ class SimplexSolver:
         return np.dot(self.c_original.T, self.solution())[0]
 
     def solve(self):
-        self.compute_initial_BFS([1, 2])
+        # self.compute_initial_BFS([1, 2])
+        self.compute_initial_BFS()
         prev_objective = self.objective()
 
         print(self.tableau)
