@@ -92,12 +92,16 @@ class Tableau:
         for pivot_to_leave in range(self.num_basic_vars):
             coeff = self.A[pivot_to_leave, entering_variable]
             if 0 < coeff:
+                if self.b[pivot_to_leave] == 0.0:
+                    print(f"Degeneracy detected: b[{pivot_to_leave}] = 0")
                 upper_bound = self.b[pivot_to_leave] / coeff
                 if upper_bound < supremum:
                     supremum = upper_bound
                     basic_var_to_exit = pivot_to_leave
                     found_upper_bound = True
-        assert found_upper_bound
+        if not found_upper_bound:
+            print(f"problem unbounded. Make variable {entering_variable} = +inf")
+            return None
         return basic_var_to_exit
 
         """TODO: add logic to detect the objective would not increase
@@ -159,6 +163,8 @@ if __name__ == "__main__":
         new_basic_var = t.find_variable_to_enter_basis()
         print(f"Entering basis: {new_basic_var}")
         exiting_pivot = t.find_variable_to_exit_basis(new_basic_var)
+        if exiting_pivot is None:  # early termination
+            break
         print(f"Exiting basis: {t.basis[exiting_pivot]}")
         t.pivot(exiting_pivot, new_basic_var)
         print(t.basis)
