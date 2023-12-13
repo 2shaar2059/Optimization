@@ -84,7 +84,6 @@ class SimplexSolver:
         return self.tableau.c
 
     def compute_initial_BFS(self, initial_basis=None, random_init=False):
-        # TODO initialize basis by solving auxillary LP
         if initial_basis:
             self.basis = initial_basis
             self.tableau.reduce_BFS(self.basis)
