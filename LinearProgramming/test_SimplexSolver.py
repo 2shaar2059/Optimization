@@ -76,6 +76,27 @@ class Test_SimplexSolver(unittest.TestCase):
         expected_solution = np.array([0, 0, 50, 0, 0, 150, 0])
         self.checkSolution(solution, expected_solution)
 
+    def test_redundant_constraint(self):
+        # Example from wenshenpsu Linear Programming YouTube Series
+        A = np.array(
+            [
+                [1, 2, 0, 1],
+                [2, 1, 1, 0],
+                [-1, 4, -2, 3],
+            ]
+        )
+        b = np.array([[20, 10, 40]]).T
+        c = np.array(
+            [
+                [1, 4, 3, 2],
+            ]
+        ).T
+        ss = SimplexSolver(A, b, c)
+        solution = ss.solve()
+
+        expected_solution = np.array([1, 0, 0, 6])
+        self.checkSolution(solution, expected_solution)
+
 
 if __name__ == "__main__":
     np.set_printoptions(linewidth=999, suppress=True)

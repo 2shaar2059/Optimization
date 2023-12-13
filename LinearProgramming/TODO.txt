@@ -14,7 +14,7 @@ degenerate pivots (basic variable = 0)
 
 Test cases for each of the above
 
-
+Dont add artificial varialebs for equailty cosntraints born out of inequality because slack variable can double as artificial variable
 
 CentralPathSolver.py
     interior point method?
