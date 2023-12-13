@@ -1,4 +1,4 @@
-from LinearProgram import *
+from LinearProgram import LinearProgram, Constraint
 import unittest
 import numpy as np
 
@@ -8,16 +8,18 @@ class Test_LPparser(unittest.TestCase):
         pass
 
     def tearDown(self):
-        print(str('-'*100))
+        print(str("-" * 100))
 
     def test_parse_constraint(self):
         constraint = Constraint("4x_1 - x_2 + x_4 <= 6")
 
-        coeffs_expected = np.array([4, -1,  1])
+        coeffs_expected = np.array([4, -1, 1])
 
         self.assertEqual(len(coeffs_expected), len(constraint.coeffs))
         for i in range(len(coeffs_expected)):
-            self.assertAlmostEqual(coeffs_expected[i], constraint.coeffs[i], delta=1e-10)
+            self.assertAlmostEqual(
+                coeffs_expected[i], constraint.coeffs[i], delta=1e-10
+            )
 
 
 class Test_Constraint(unittest.TestCase):
@@ -25,25 +27,29 @@ class Test_Constraint(unittest.TestCase):
         pass
 
     def tearDown(self):
-        print(str('-'*100))
+        print(str("-" * 100))
 
     def test_convert_LessThan_to_equality_slack(self):
         constraint = Constraint("4x_1 - x_2 + x_4 <= 6")
         constraint.convert_to_equality("slack0")
 
-        coeffs_expected = np.array([4, -1,  1,  1])
+        coeffs_expected = np.array([4, -1, 1, 1])
         self.assertEqual(len(coeffs_expected), len(constraint.coeffs))
         for i in range(len(coeffs_expected)):
-            self.assertAlmostEqual(coeffs_expected[i], constraint.coeffs[i], delta=1e-10)
+            self.assertAlmostEqual(
+                coeffs_expected[i], constraint.coeffs[i], delta=1e-10
+            )
 
     def test_convert_GreaterThan_to_equality_slack(self):
         constraint = Constraint("4x_1 - x_2 + x_4 >= 6")
         constraint.convert_to_equality("slack0")
 
-        coeffs_expected = np.array([4, -1,  1,  -1])
+        coeffs_expected = np.array([4, -1, 1, -1])
         self.assertEqual(len(coeffs_expected), len(constraint.coeffs))
         for i in range(len(coeffs_expected)):
-            self.assertAlmostEqual(coeffs_expected[i], constraint.coeffs[i], delta=1e-10)
+            self.assertAlmostEqual(
+                coeffs_expected[i], constraint.coeffs[i], delta=1e-10
+            )
 
 
 class Test_LinearProgram(unittest.TestCase):
@@ -51,7 +57,7 @@ class Test_LinearProgram(unittest.TestCase):
         pass
 
     def tearDown(self):
-        print(str('-'*100))
+        print(str("-" * 100))
 
     def test_Parsing1(self):
         objective = "max 3x_1 - 2x_2 - x_3 + x_4"
@@ -71,7 +77,7 @@ class Test_LinearProgram(unittest.TestCase):
             [1,  1,  4,  0,  0,  0,  0,  0],
             [0,  0,  1,  0,  0,  0, -1,  1,]])
         b_expected = np.array([[6, 7, 12, 0]]).T
-        c_expected = np.array([3,  -2, 1,  0,  -1,  0,  0,  0])
+        c_expected = np.array([3, -2, 1, 0, -1, 0, 0, 0])
 
         for i in range(len(lp.A)):
             for j in range(len(lp.A[0])):

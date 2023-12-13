@@ -1,0 +1,20 @@
+Initilaization
+    solve auxilalry problem
+        aux problem infeasible?
+
+pivoting rule?
+
+Detecting unbounded feasible region
+
+detect stopping
+
+detect cycles
+
+degenerate pivots (basic variable = 0)
+
+Test cases for each of the above
+
+Dont add artificial varialebs for equailty cosntraints born out of inequality because slack variable can double as artificial variable
+
+CentralPathSolver.py
+    interior point method?
